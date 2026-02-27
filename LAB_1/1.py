@@ -55,15 +55,17 @@ for size in sizes:
         }
     )
 
+f = open('LAB_1//text.txt', 'w')
 
-print("-" * 200)
 header = (
     f"{'Size':>10} | {'Py sum':>12} | {'NP sum':>12} | {'Faster sum':>12} | "
     f"{'Py mean':>12} | {'NP mean':>12} | {'Faster mean':>12} | "
     f"{'Py mul':>12} | {'NP mul':>12} | {'Faster mul':>12}"
 )
-print(header)
-print("-" * 200)
+
+f.write(header + "\n")
+
+f.write("-" * 200 + "\n")
 
 for r in results:
     faster_sum = "NumPy" if r["np_sum_time"] < r["py_sum_time"] else "Python"
@@ -75,6 +77,6 @@ for r in results:
         f"{r['py_mean_time']:>12.6f} | {r['np_mean_time']:>12.6f} | {faster_mean:>12} | "
         f"{r['py_mul_time']:>12.6f} | {r['np_mul_time']:>12.6f} | {faster_mul:>12}"
     )
-    print(line)
+    f.write(line + "\n")
 
-print("-" * 200)
+f.write("-" * 200 + "\n")
