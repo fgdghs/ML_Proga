@@ -80,3 +80,5 @@ for r in results:
     f.write(line + "\n")
 
 f.write("-" * 200 + "\n")
+
+print("ready")
