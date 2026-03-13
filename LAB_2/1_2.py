@@ -3,71 +3,84 @@ import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
 
-
+#  1. Первичный анализ данных (EDA)
 df_train = pd.read_csv("LAB_2/smartphone_battery_drain_dataset.csv")
 
-print(df_train.head(5))
-print(df_train.columns)
-print(df_train.info())
-print(df_train.describe())
+with open("LAB_2/DEBUG.txt", "w", encoding="utf-8") as f:
+    
+    f.write(" 1. ПЕРВИЧНЫЙ АНАЛИЗ (EDA) \n")
+    f.write(f"Исходный размер датасета: {df_train.shape}\n")
+    f.write("\n Первые 5 строк:\n")
+    f.write(df_train.head(5).to_string() + "\n")
+    
+    f.write("\n Столбцы и типы данных:\n")
+    df_train.info(buf=f)
+    
+    f.write("\n Статистическое описание:\n")
+    f.write(df_train.describe().to_string() + "\n\n")
 
-print(" " * 200 + "\n")
+    # 2. Очитска данных и обработка выбросов
+    df = df_train.drop_duplicates().copy()
+    f.write(f" 2. ОЧИСТКА \n")
+    f.write(f"Количество найденных дубликатов: {df_train.duplicated().sum()}\n")
+    
+    f.write("\n Пропущенные значения \n")
+    f.write(df.isnull().sum().to_string() + "\n")
 
-print(f"Количество дубликатов = {df_train.duplicated().sum()}\n")
-df = df_train.drop_duplicates()
-print(f"Пропущенные знчения \n{df.isnull().sum()}\n")
-print(f"Размер датасета = {len(df)}")
+    # Ответ на вопрос почему я решил удалить выбросы
+    df_clean = df.dropna(subset=["CPU_Usage_%", "Battery_Temperature_C"])
+    stats = df_clean.groupby("Usage_Mode")[["CPU_Usage_%", "Battery_Temperature_C"]].agg(
+        ["count", "mean", "median", "std", "min", "max"]
+    )
+    f.write("\n Статистика по группам (Usage_Mode) или почему я удалил пропуски\n")
+    f.write(stats.to_string() + "\n")
 
-
-df_clean = df.dropna(subset=["CPU_Usage_%", "Battery_Temperature_C"])
-
-stats = df_clean.groupby("Usage_Mode")[["CPU_Usage_%", "Battery_Temperature_C"]].agg(
-    ["count", "mean", "median", "std", "min", "max"]
-)
-print(stats)
-
-df.dropna(subset=["CPU_Usage_%", "Battery_Temperature_C"], inplace=True)
-print(f"\nРазмер датасета = {len(df)}")
-
-numeric_cols = df.select_dtypes(include=[np.number]).columns.tolist()
-print("Числовые признаки:", numeric_cols)
-
-plt.figure(figsize=(15, 8))
-for i, col in enumerate(numeric_cols, 1):
-    plt.subplot(3, 4, i)
-    sns.boxplot(y=df[col])
-    plt.title(col)
-plt.tight_layout()
-plt.show()
-
-for col in numeric_cols:
-    Q1 = df[col].quantile(0.25)
-    Q3 = df[col].quantile(0.75)
-    IQR = Q3 - Q1
-    lower = Q1 - 1.5 * IQR
-    upper = Q3 + 1.5 * IQR
-    df[col] = df[col].clip(lower, upper)
+    df.dropna(subset=["CPU_Usage_%", "Battery_Temperature_C"], inplace=True)
 
 
-df = pd.get_dummies(df, columns=["Network_Type", "Usage_Mode"], prefix=["Net", "Mode"])
+    # Обработка выбросов(Ящик с усами)
+    numeric_cols = df.select_dtypes(include=[np.number]).columns.tolist()
+    f.write("\n ОБРАБОТКА ВЫБРОСОВ\n")
+    plt.figure(figsize=(15, 8))
+    for i, col in enumerate(numeric_cols, 1):
+        plt.subplot(3, 4, i)
+        sns.boxplot(y=df[col])
+        plt.title(col)
+    plt.tight_layout()
+    plt.show()
 
-df["Charging_State"] = df["Charging_State"].map({"Charging": 1, "Not Charging": 0})
+    for col in numeric_cols:
+        Q1 = df[col].quantile(0.25)
+        Q3 = df[col].quantile(0.75)
+        IQR = Q3 - Q1
+        lower = Q1 - 1.5 * IQR
+        upper = Q3 + 1.5 * IQR
+        
+        # Кол-во выбросов
+        outliers_count = ((df[col] < lower) | (df[col] > upper)).sum()
+        f.write(f"Признак '{col}': обработано выбросов -> {outliers_count}\n")
+        
+        df[col] = df[col].clip(lower, upper)
 
+    # 3 обрабатываю категориальные выбросы
+    f.write(" 3. КОДИРОВАНИЕ ПРИЗНАКОВ \n")
+    df = pd.get_dummies(df, columns=["Network_Type", "Usage_Mode"], prefix=["Net", "Mode"])
+    df["Charging_State"] = df["Charging_State"].map({"Charging": 1, "Not Charging": 0})
+    
+    freq_encoding = df["App_Running"].value_counts().to_dict()
+    df["App_Running_freq"] = df["App_Running"].map(freq_encoding)
+    df.drop("App_Running", axis=1, inplace=True)
 
-freq_encoding = df["App_Running"].value_counts().to_dict()
-df["App_Running_freq"] = df["App_Running"].map(freq_encoding)
-df.drop("App_Running", axis=1, inplace=True)
+    # 4 Создание новых столбов
+    df["Intensity"] = (df["CPU_Usage_%"] * df["RAM_Usage_MB"]) / 1000
+    df["Total_Battery_Drain"] = (df["Screen_On_Time_min"] / 60) * df["Battery_Drop_Per_Hour"]
+    temp_threshold = df["Battery_Temperature_C"].median()
+    df["High_Temperature"] = (df["Battery_Temperature_C"] > temp_threshold).astype(int)
 
-
-df["Intensity"] = df["CPU_Usage_%"] * df["RAM_Usage_MB"] / 1000
-df["Total_Battery_Drain"] = df["Screen_On_Time_min"] * df["Battery_Drop_Per_Hour"] / 60
-temp_threshold = df["Battery_Temperature_C"].median()
-df["High_Temperature"] = (df["Battery_Temperature_C"] > temp_threshold).astype(int)
-
-
-print("\nФинальный размер датасета:", df.shape)
-print("\nОписание финальных признаков (первые 5 строк):")
-print(df.head())
-
+    f.write("\n4. НОВЫЕ ПРИЗНАКИ \n")
+    f.write(f"Созданы признаки: Intensity, Total_Battery_Drain, High_Temperature\n")
+    f.write(f"Итоговая размерность: {df.shape}\n")
 
 df.to_csv("LAB_2/smartphone_battery_processed.csv", index=False)
+
+print("READY " * 100)
