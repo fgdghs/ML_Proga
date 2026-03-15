@@ -37,29 +37,40 @@ with open("LAB_2/DEBUG.txt", "w", encoding="utf-8") as f:
 
     df.dropna(subset=["CPU_Usage_%", "Battery_Temperature_C"], inplace=True)
 
-    # Обработка выбросов(Ящик с усами)
+    # Определяем список числовых колонок для визуализации
     numeric_cols = df.select_dtypes(include=[np.number]).columns.tolist()
-    f.write("\n ОБРАБОТКА ВЫБРОСОВ\n")
-    plt.figure(figsize=(15, 8))
+
+    f.write("\n --- 2 Обработка выбросов --- \n")
+
+    df_before = df.copy()
+    df_before["Data_State"] = "Before"
+
+    # 2. Температура
+    df["Battery_Temperature_C"] = df["Battery_Temperature_C"].clip(lower=0)
+
+    # Проценты
+    for pct_col in ["CPU_Usage_%", "Brightness_Level_%"]:
+        df[pct_col] = df[pct_col].clip(0, 100)
+
+    # Физические величины (не могут быть отрицательными)
+    df["RAM_Usage_MB"] = df["RAM_Usage_MB"].clip(lower=0)
+    df["Screen_On_Time_min"] = df["Screen_On_Time_min"].clip(lower=0)
+    df["Battery_Drop_Per_Hour"] = df["Battery_Drop_Per_Hour"].clip(lower=0)
+
+    df_after = df.copy()
+    df_after["Data_State"] = "After"
+
+    df_compare = pd.concat([df_before, df_after])
+
+    plt.figure(figsize=(18, 12))
     for i, col in enumerate(numeric_cols, 1):
-        plt.subplot(3, 4, i)
-        sns.boxplot(y=df[col])
-        plt.title(col)
+        plt.subplot(2, 3, i)
+        sns.boxplot(data=df_compare, x="Data_State", y=col, palette="Set2")
+        plt.title(f"Comparison: {col}")
+        plt.xlabel("")
+
     plt.tight_layout()
     plt.show()
-
-    for col in numeric_cols:
-        Q1 = df[col].quantile(0.25)
-        Q3 = df[col].quantile(0.75)
-        IQR = Q3 - Q1
-        lower = Q1 - 1.5 * IQR
-        upper = Q3 + 1.5 * IQR
-
-        # Кол-во выбросов
-        outliers_count = ((df[col] < lower) | (df[col] > upper)).sum()
-        f.write(f"Признак '{col}': обработано выбросов -> {outliers_count}\n")
-
-        df[col] = df[col].clip(lower, upper)
 
     # 3 Кодирую признаки
     f.write(" 3. КОДИРОВАНИЕ ПРИЗНАКОВ \n")
