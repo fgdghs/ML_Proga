@@ -27,7 +27,7 @@ with open("LAB_2/DEBUG.txt", "w", encoding="utf-8") as f:
     f.write("\n Пропущенные значения \n")
     f.write(df.isnull().sum().to_string() + "\n")
 
-    # Ответ на вопрос почему я решил удалить выбросы
+    # Ответ на вопрос почему я решил удалить пропуски
     df_clean = df.dropna(subset=["CPU_Usage_%", "Battery_Temperature_C"])
     stats = df_clean.groupby("Usage_Mode")[
         ["CPU_Usage_%", "Battery_Temperature_C"]
@@ -37,7 +37,6 @@ with open("LAB_2/DEBUG.txt", "w", encoding="utf-8") as f:
 
     df.dropna(subset=["CPU_Usage_%", "Battery_Temperature_C"], inplace=True)
 
-    # Определяем список числовых колонок для визуализации
     numeric_cols = df.select_dtypes(include=[np.number]).columns.tolist()
 
     f.write("\n --- 2 Обработка выбросов --- \n")
