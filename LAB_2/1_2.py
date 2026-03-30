@@ -71,16 +71,16 @@ with open("LAB_2/DEBUG.txt", "w", encoding="utf-8") as f:
     plt.tight_layout()
     plt.show()
 
-    # 3 Кодирую признаки
-    f.write(" 3. КОДИРОВАНИЕ ПРИЗНАКОВ \n")
-    df = pd.get_dummies(
-        df, columns=["Network_Type", "Usage_Mode"], prefix=["Net", "Mode"]
-    )
-    df["Charging_State"] = df["Charging_State"].map({"Charging": 1, "Not Charging": 0})
+    # # 3 Кодирую признаки
+    # f.write(" 3. КОДИРОВАНИЕ ПРИЗНАКОВ \n")
+    # df = pd.get_dummies(
+    #     df, columns=["Network_Type", "Usage_Mode"], prefix=["Net", "Mode"]
+    # )
+    # df["Charging_State"] = df["Charging_State"].map({"Charging": 1, "Not Charging": 0})
 
-    freq_encoding = df["App_Running"].value_counts().to_dict()
-    df["App_Running_freq"] = df["App_Running"].map(freq_encoding)
-    df.drop("App_Running", axis=1, inplace=True)
+    # freq_encoding = df["App_Running"].value_counts().to_dict()
+    # df["App_Running_freq"] = df["App_Running"].map(freq_encoding)
+    # df.drop("App_Running", axis=1, inplace=True)
 
     # 4 Создание новых столбов
     df["Intensity"] = (df["CPU_Usage_%"] * df["RAM_Usage_MB"]) / 1000
