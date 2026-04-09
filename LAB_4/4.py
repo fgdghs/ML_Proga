@@ -34,6 +34,11 @@ cols_to_keep = [
 ]
 df = df[cols_to_keep]
 
+plt.figure(figsize=(8, 5))
+sns.heatmap(df.select_dtypes(include=[np.number]).corr(), annot=True, cmap="coolwarm")
+plt.title("Корреляция признаков")
+plt.show()
+
 # Разделение на признаки и таргет
 X = df.drop(columns=[target])
 y = df[target]
