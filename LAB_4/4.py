@@ -9,9 +9,6 @@ from sklearn.ensemble import RandomForestRegressor
 from xgboost import XGBRegressor
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 
-# =================================================================
-# 1. ПОДГОТОВКА ДАННЫХ (Из Лабораторной 3)
-# =================================================================
 path = "LAB_3/smartphone_battery_processed.csv"
 df = pd.read_csv(path)
 
@@ -78,9 +75,7 @@ def transform_data(data):
 X_train_f = transform_data(X_train)
 X_test_f = transform_data(X_test)
 
-# =================================================================
 # 2. ОБУЧЕНИЕ МОДЕЛЕЙ (ЛАБОРАТОРНАЯ 4)
-# =================================================================
 results = []
 
 
@@ -124,30 +119,5 @@ for i, params in enumerate(xgb_sets):
     xgb = XGBRegressor(**params, random_state=42).fit(X_train_f, y_train)
     log_result(f"XGBoost v{i+1}", str(params), xgb)
 
-# =================================================================
-# 3. СРАВНЕНИЕ И ВЫВОДЫ
-# =================================================================
-comparison_df = pd.DataFrame(results)
 print("\nТаблица сравнения результатов:")
-print(comparison_df.to_string(index=False))
-
-# Визуализация важности признаков у лучшей модели (XGBoost v3)
-best_model = XGBRegressor(n_estimators=300, learning_rate=0.1, random_state=42).fit(
-    X_train_f, y_train
-)
-importance = pd.DataFrame(
-    {"Feature": X_train_f.columns, "Importance": best_model.feature_importances_}
-)
-importance = importance.sort_values(by="Importance", ascending=False).head(10)
-
-plt.figure(figsize=(10, 6))
-sns.barplot(
-    x="Importance",
-    y="Feature",
-    data=importance,
-    hue="Feature",
-    palette="viridis",
-    legend=False,
-)
-plt.title("Топ-10 важных признаков (XGBoost)")
-plt.show()
+print(pd.DataFrame(results).to_string(index=False))
